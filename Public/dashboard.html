@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- 🔐 AUTH CHECK -->
+<script>
+if (!localStorage.getItem("token")) {
+    window.location.href = "login.html";
+}
+</script>
+
+<div class="dashboard">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+    <h2>TaskManager</h2>
+    <ul>
+        <li class="active" onclick="filterTasks('all', this)">Dashboard</li>
+        <li onclick="filterTasks('pending', this)">My Tasks</li>
+        <li onclick="filterTasks('completed', this)">Completed</li>
+    </ul>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+<header class="topbar">
+    <h3>Welcome 👋</h3>
+    <button id="logoutBtn" class="logout-btn">Logout</button>
+</header>
+
+<!-- ===== TASK FORM ===== -->
+<section>
+    <h2>Add New Task</h2>
+
+    <form class="task-form" id="taskForm">
+        <div style="position:relative;">
+            <input type="text" id="taskName" placeholder="Task Title" required>
+            <div id="suggestionBox" class="suggestion-box"></div>
+        </div>
+
+        <select id="taskStatus">
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+        </select>
+
+        <input 
+            type="text" 
+            id="taskDeadline" 
+            placeholder="Enter your task deadline"
+            onfocus="this.type='date'"
+            onblur="if(!this.value)this.type='text'"
+        >
+
+        <button type="submit">+ Add Task</button>
+    </form>
+</section>
+
+<!-- ===== SEARCH ===== -->
+<section class="search-section">
+    <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search tasks...">
+    </div>
+</section>
+
+<!-- ===== TASK LIST ===== -->
+<section>
+    <h2>Your Tasks</h2>
+    <div id="taskList" class="task-grid"></div>
+</section>
+
+</main>
+</div>
+
+<!-- ===== EDIT MODAL ===== -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>Edit Task</h3>
+
+        <input type="text" id="editName">
+
+        <select id="editStatus">
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+        </select>
+
+        <input type="date" id="editDeadline">
+
+        <div class="modal-actions">
+            <button class="update-btn" onclick="updateTask()">Update</button>
+            <button class="cancel-btn" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+const API = "http://localhost:5000/api/tasks";
+const token = localStorage.getItem("token");
+
+let currentFilter = "all";
+let searchQuery = "";
+let editTaskId = null;
+
+// 🔍 SEARCH
+document.getElementById("searchInput").addEventListener("input", (e) => {
+    searchQuery = e.target.value.toLowerCase();
+    loadTasks();
+});
+
+// 🎯 FILTER
+function filterTasks(type, el) {
+    currentFilter = type;
+
+    document.querySelectorAll(".sidebar li").forEach(li => {
+        li.classList.remove("active");
+    });
+
+    el.classList.add("active");
+    loadTasks();
+}
+
+// =======================
+// 🤖 AI SUGGESTION
+// =======================
+const taskInput = document.getElementById("taskName");
+const suggestionBox = document.getElementById("suggestionBox");
+
+taskInput.addEventListener("input", () => {
+    const text = taskInput.value.toLowerCase();
+    let suggestion = "";
+
+    // ✅ Study
+    if (text.includes("study") || text.includes("exam") || text.includes("learn")) {
+        suggestion = "📘 Study for 2 hours";
+    } 
+
+    // ✅ Gym / Fitness
+    else if (
+        text.includes("gym") ||
+        text.includes("workout") ||
+        text.includes("exercise") ||
+        text.includes("fitness")
+    ) {
+        suggestion = "💪 Workout for 1 hour";
+    }
+
+    // ✅ Project / Work
+    else if (
+        text.includes("project") ||
+        text.includes("code") ||
+        text.includes("assignment") ||
+        text.includes("work")
+    ) {
+        suggestion = "🛠 Work on project for 3 hours";
+    }
+
+    // ✅ Reading
+    else if (
+        text.includes("read") ||
+        text.includes("book") ||
+        text.includes("study material")
+    ) {
+        suggestion = "📖 Read 20 pages";
+    }
+
+    // Show / Hide
+    if (suggestion) {
+        suggestionBox.innerText = suggestion;
+        suggestionBox.style.display = "block";
+    } else {
+        suggestionBox.style.display = "none";
+    }
+});
+
+// ✅ CLICK SUGGESTION (FIXED)
+suggestionBox.addEventListener("click", () => {
+    taskInput.value = suggestionBox.innerText.replace(/^[^\w]+/, "");
+    suggestionBox.style.display = "none";
+});
+
+// hide on outside click
+document.addEventListener("click", (e) => {
+    if (!suggestionBox.contains(e.target) && e.target !== taskInput) {
+        suggestionBox.style.display = "none";
+    }
+});
+
+// =======================
+// ➕ ADD TASK
+// =======================
+document.getElementById("taskForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = taskInput.value;
+    const status = document.getElementById("taskStatus").value;
+    const deadline = document.getElementById("taskDeadline").value;
+
+    await fetch(API, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": token
+        },
+        body: JSON.stringify({ name, status, deadline })
+    });
+
+    e.target.reset();
+    suggestionBox.style.display = "none";
+    loadTasks();
+});
+
+// =======================
+// 📥 LOAD TASKS
+// =======================
+async function loadTasks() {
+    try {
+        const res = await fetch(API, {
+            headers: { "Authorization": token }
+        });
+
+        const tasks = await res.json();
+        const list = document.getElementById("taskList");
+        list.innerHTML = "";
+
+        if (!tasks.length) {
+            list.innerHTML = "<p>No tasks yet 🚀</p>";
+            return;
+        }
+
+        tasks.forEach(task => {
+
+            if (currentFilter === "pending" && task.status !== "pending") return;
+            if (currentFilter === "completed" && task.status !== "completed") return;
+            if (!task.name.toLowerCase().includes(searchQuery)) return;
+
+            const div = document.createElement("div");
+            div.classList.add("task-card");
+
+            const isOverdue =
+                task.deadline &&
+                new Date(task.deadline) < new Date() &&
+                task.status !== "completed";
+
+            if (isOverdue) div.classList.add("overdue");
+
+                 div.innerHTML = `
+    <div class="task-header">
+        <h4>${task.name}</h4>
+        <span class="status ${task.status}">${task.status}</span>
+    </div>
+
+    <p>📅 Due: ${
+        task.deadline
+        ? new Date(task.deadline).toLocaleDateString()
+        : "No date"
+    }</p>
+
+    <div class="task-actions">
+    <button class="complete-btn"
+        onclick="toggleStatus('${task.id}', '${task.status}')">
+        ${task.status === "completed" ? "Undo" : "Complete"}
+    </button>
+
+    <button class="edit-btn"
+        onclick="openEditModal(
+            '${task.id}',
+            '${task.name}',
+            '${task.status}',
+            '${task.deadline || ""}'
+        )">
+        Edit
+    </button>
+
+    <button class="delete-btn"
+        onclick="deleteTask('${task.id}')">
+        Delete
+    </button>
+</div>
+`;
+            list.appendChild(div);
+        });
+
+    } catch (err) {
+        alert("Error loading tasks");
+    }
+}
+
+// =======================
+// 🔁 TOGGLE STATUS
+// =======================
+async function toggleStatus(id, currentStatus) {
+    const newStatus = currentStatus === "completed" ? "pending" : "completed";
+
+    await fetch(`${API}/${id}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": token
+        },
+        body: JSON.stringify({ status: newStatus })
+    });
+
+    loadTasks();
+}
+
+// =======================
+// ✏️ EDIT MODAL
+// =======================
+function openEditModal(id, name, status, deadline) {
+    editTaskId = id;
+
+    document.getElementById("editName").value = name;
+    document.getElementById("editStatus").value = status;
+    document.getElementById("editDeadline").value =
+        deadline ? deadline.split("T")[0] : "";
+
+    document.getElementById("editModal").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("editModal").style.display = "none";
+}
+
+async function updateTask() {
+    const name = document.getElementById("editName").value;
+    const status = document.getElementById("editStatus").value;
+    const deadline = document.getElementById("editDeadline").value;
+
+    await fetch(`${API}/${editTaskId}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": token
+        },
+        body: JSON.stringify({ name, status, deadline })
+    });
+
+    closeModal();
+    loadTasks();
+}
+
+// =======================
+// ❌ DELETE
+// =======================
+async function deleteTask(id) {
+    await fetch(`${API}/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": token }
+    });
+
+    loadTasks();
+}
+
+// =======================
+// 🚪 LOGOUT
+// =======================
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("token");
+    window.location.href = "login.html";
+});
+
+// close modal on outside click
+window.onclick = function(e) {
+    const modal = document.getElementById("editModal");
+    if (e.target === modal) closeModal();
+};
+
+// 🚀 INIT
+loadTasks();
+</script>
+
+</body>
+</html>

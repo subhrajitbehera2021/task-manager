@@ -1,0 +1,419 @@
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* ===== BODY ===== */
+body {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+/* ===== AUTH (LOGIN / SIGNUP) ===== */
+.auth-container {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.auth-card {
+    background: #fff;
+    padding: 30px;
+    width: 320px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+
+.auth-card h2 {
+    text-align: center;
+}
+
+.auth-card input {
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+.auth-card button {
+    padding: 12px;
+    border: none;
+    background: linear-gradient(45deg, #3b82f6, #2563eb);
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.auth-card button:hover {
+    opacity: 0.9;
+}
+
+.auth-card a {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+/* ===== DASHBOARD LAYOUT ===== */
+.dashboard {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 230px;
+    background: #1e293b;
+    color: white;
+    padding: 20px;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar li {
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.sidebar li:hover,
+.sidebar li.active {
+    background: #334155;
+}
+
+/* ===== MAIN ===== */
+.main {
+    flex: 1;
+    padding: 25px;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.logout-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.logout-btn:hover {
+    background: #dc2626;
+}
+
+/* ===== TASK FORM ===== */
+.task-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.task-form input,
+.task-form select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.task-form button {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(45deg, #22c55e, #16a34a);
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.task-form button:hover {
+    opacity: 0.9;
+}
+
+/* ===== TASK GRID ===== */
+.task-grid {
+    margin-top: 15px;
+}
+
+/* ===== TASK CARD ===== */
+.task-card {
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    transition: 0.2s;
+}
+
+.task-card:hover {
+    transform: translateY(-4px);
+}
+
+/* HEADER INSIDE CARD */
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* STATUS BADGE */
+.status {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status.pending {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.status.completed {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+/* ACTION BUTTONS */
+.task-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* ===== MODAL BACKGROUND ===== */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    
+    background: rgba(0, 0, 0, 0.5);
+
+    justify-content: center;
+    align-items: center;
+}
+
+/* ===== MODAL BOX ===== */
+.modal-content {
+    background: white;
+    padding: 25px;
+    width: 320px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: popup 0.3s ease;
+}
+
+/* ✨ Smooth animation */
+@keyframes popup {
+    from {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===== INPUTS ===== */
+.modal-content input,
+.modal-content select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* ===== BUTTONS ===== */
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.modal-actions button {
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* ✅ Update button */
+.modal-actions button:first-child {
+    background: #22c55e;
+    color: white;
+}
+
+.modal-actions button:first-child:hover {
+    background: #16a34a;
+}
+
+/* ❌ Cancel button */
+.modal-actions button:last-child {
+    background: #e5e7eb;
+}
+
+.modal-actions button:last-child:hover {
+    background: #d1d5db;
+}
+
+/* ===== ACTION BUTTONS ===== */
+.task-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: 0.2s;
+}
+
+/* ✅ Undo / Complete Button */
+.task-actions button:first-child {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.task-actions button:first-child:hover {
+    background: #cbd5f5;
+}
+
+/* ✏️ Edit Button */
+.task-actions button:nth-child(2) {
+    background: #3b82f6;
+    color: white;
+}
+
+.task-actions button:nth-child(2):hover {
+    background: #2563eb;
+}
+
+/* ❌ Delete Button (already but improved) */
+.delete-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+/* ===== SEARCH SECTION ===== */
+.search-section {
+    margin-bottom: 20px;
+}
+
+/* ===== SEARCH BOX ===== */
+.search-box {
+    position: relative;
+    width: 100%;
+}
+
+/* 🔍 ICON */
+.search-icon {
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    transform: translateY(-50%);
+    font-size: 14px;
+    color: #64748b;
+}
+
+/* 🔎 INPUT FIELD */
+.search-box input {
+    width: 100%;
+    padding: 12px 12px 12px 35px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    font-size: 14px;
+    transition: 0.25s;
+}
+
+/* ✨ FOCUS EFFECT */
+.search-box input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* 💡 PLACEHOLDER */
+.search-box input::placeholder {
+    color: #94a3b8;
+}
+
+/* 🪄 HOVER EFFECT */
+.search-box input:hover {
+    border-color: #cbd5f5;
+}
+
+/* ===== AI SUGGESTION BOX ===== */
+.suggestion-box {
+    margin-top: 5px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 8px;
+    font-size: 13px;
+    color: #334155;
+    display: none;
+    cursor: pointer;
+}
+
+.suggestion-box:hover {
+    background: #e2e8f0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width: 768px) {
+    .dashboard {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+    }
+}
