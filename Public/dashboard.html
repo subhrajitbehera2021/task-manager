@@ -72,6 +72,16 @@ if (!localStorage.getItem("token")) {
     </div>
 </section>
 
+<!-- ===== SMART RECOMMENDATION ===== -->
+<section class="recommendation-section">
+    <h2>Smart Recommendation</h2>
+
+    <div id="recommendationBox" class="recommendation-box">
+        Loading recommendation...
+    </div>
+</section>
+
+
 <!-- ===== TASK LIST ===== -->
 <section>
     <h2>Your Tasks</h2>
@@ -217,6 +227,7 @@ document.getElementById("taskForm").addEventListener("submit", async (e) => {
     e.target.reset();
     suggestionBox.style.display = "none";
     loadTasks();
+    loadRecommendation();
 });
 
 // =======================
@@ -311,6 +322,7 @@ async function toggleStatus(id, currentStatus) {
     });
 
     loadTasks();
+    loadRecommendation();
 }
 
 // =======================
@@ -347,6 +359,7 @@ async function updateTask() {
 
     closeModal();
     loadTasks();
+    loadRecommendation();
 }
 
 // =======================
@@ -359,6 +372,48 @@ async function deleteTask(id) {
     });
 
     loadTasks();
+    loadRecommendation();
+}
+
+// =======================
+// 🤖 SMART RECOMMENDATION
+// =======================
+
+const RECOMMEND_API =
+    "https://task-manager-0ks0.onrender.com/api/recommendations";
+
+async function loadRecommendation() {
+
+    try {
+
+        const res = await fetch(RECOMMEND_API, {
+            headers: {
+                "Authorization": token
+            }
+        });
+
+        const data = await res.json();
+
+        document.getElementById("recommendationBox").innerHTML = `
+            <p>
+                <strong>Suggested:</strong>
+                ${data.suggestion}
+            </p>
+
+            <p>
+                <small>
+                    Top Category:
+                    ${data.topCategory}
+                </small>
+            </p>
+        `;
+
+    } catch (err) {
+
+        document.getElementById("recommendationBox")
+            .innerText =
+            "Could not load recommendation.";
+    }
 }
 
 // =======================
@@ -377,6 +432,7 @@ window.onclick = function(e) {
 
 // 🚀 INIT
 loadTasks();
+loadRecommendation();
 </script>
 
 </body>

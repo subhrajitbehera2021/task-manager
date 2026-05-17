@@ -1,285 +1,404 @@
-    require("dotenv").config();
+require("dotenv").config();
 
-    const express = require("express");
-    const cors = require("cors");
-    const bcrypt = require("bcryptjs");
-    const jwt = require("jsonwebtoken");
-    const { createClient } = require("@supabase/supabase-js");
+const express = require("express");
+const cors = require("cors");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { createClient } = require("@supabase/supabase-js");
 
-    const app = express();
+const app = express();
 
-    app.use(cors());
-    app.use(express.json());
-    app.use(express.static("Public"));
+app.use(cors());
+app.use(express.json());
+app.use(express.static("Public"));
 
-    /* ================= SUPABASE ================= */
+/* ================= SUPABASE ================= */
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey || !process.env.JWT_SECRET) {
+    console.error("Missing environment variables");
+    process.exit(1);
+}
 
-    console.log("Supabase Connected");
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-    /* ================= AUTH MIDDLEWARE ================= */
+console.log("Supabase Connected");
 
-    const auth = async (req, res, next) => {
-        const token = req.headers.authorization;
+/* ================= AUTH MIDDLEWARE ================= */
 
-        if (!token) {
-            return res.status(401).json({ message: "No token" });
-        }
+const auth = async (req, res, next) => {
+    const token = req.headers.authorization;
 
-        try {
-            const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET
-            );
-            req.userId = decoded.id;
-            next();
+    if (!token) {
+        return res.status(401).json({ message: "No token" });
+    }
 
-        } catch (err) {
-            return res.status(401).json({ message: "Invalid token" });
-        }
-    };
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userId = decoded.id;
+        next();
+    } catch (err) {
+        return res.status(401).json({ message: "Invalid token" });
+    }
+};
 
-    /* ================= AUTH ROUTES ================= */
+/* ================= AUTH ROUTES ================= */
 
-    // ➕ SIGNUP
-    app.post("/api/signup", async (req, res) => {
-        try {
+// SIGNUP
+app.post("/api/signup", async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
 
-            const { name, email, password } = req.body;
-
-            // CHECK EXISTING USER
-            const { data: existingUser } = await supabase
-                .from("users")
-                .select("*")
-                .eq("email", email)
-                .single();
-
-            if (existingUser) {
-                return res.status(400).json({
-                    message: "User already exists"
-                });
-            }
-
-            // HASH PASSWORD
-            const hashedPassword = await bcrypt.hash(password, 10);
-
-            // INSERT USER
-            const { data, error } = await supabase
-                .from("users")
-                .insert([
-                    {
-                        name,
-                        email,
-                        password: hashedPassword
-                    }
-                ])
-                .select();
-
-            if (error) {
-                console.log(error);
-                return res.status(500).json({
-                    message: "Signup failed"
-                });
-            }
-
-            res.json({
-                message: "User registered successfully"
-            });
-
-        } catch (err) {
-            console.log(err);
-            res.status(500).json({
-                message: "Signup error"
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                message: "Name, email and password are required"
             });
         }
-    });
 
-    // 🔐 LOGIN
-    app.post("/api/login", async (req, res) => {
+        const { data: existingUser } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .maybeSingle();
 
-        try {
-
-            const { email, password } = req.body;
-
-            // FIND USER
-            const { data: user, error } = await supabase
-                .from("users")
-                .select("*")
-                .eq("email", email)
-                .single();
-
-            if (!user) {
-                return res.status(401).json({
-                    message: "User not found"
-                });
-            }
-
-            // CHECK PASSWORD
-            const isMatch = await bcrypt.compare(
-                password,
-                user.password
-            );
-
-            if (!isMatch) {
-                return res.status(401).json({
-                    message: "Wrong password"
-                });
-            }
-
-            // CREATE TOKEN
-            const token = jwt.sign(
-                { id: user.id },
-                process.env.JWT_SECRET,
-                { expiresIn: "1d" }
-            );
-
-            res.json({ token });
-
-        } catch (err) {
-            console.log(err);
-            res.status(500).json({
-                message: "Login error"
+        if (existingUser) {
+            return res.status(400).json({
+                message: "User already exists"
             });
         }
-    });
 
-    /* ================= TASK ROUTES ================= */
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-    // ➕ ADD TASK
-    app.post("/api/tasks", auth, async (req, res) => {
-
-        try {
-
-            const { name, status, deadline } = req.body;
-
-            const { data, error } = await supabase
-                .from("tasks")
-                .insert([
-                    {
-                        name,
-                        status: status || "pending",
-                        deadline,
-                        user_id: req.userId
-                    }
-                ])
-                .select();
-
-            if (error) {
-                console.log(error);
-                return res.status(500).json({
-                    message: "Error adding task"
-                });
-            }
-
-            res.json(data);
-
-        } catch (err) {
-            console.log(err);
-
-            res.status(500).json({
-                message: "Server error"
-            });
-        }
-    });
-
-    // 📥 GET TASKS
-    app.get("/api/tasks", auth, async (req, res) => {
-
-        try {
-
-            const { data, error } = await supabase
-                .from("tasks")
-                .select("*")
-                .eq("user_id", req.userId)
-                .order("id", { ascending: false });
-
-            if (error) {
-                return res.status(500).json({
-                    message: "Error fetching tasks"
-                });
-            }
-
-            res.json(data);
-
-        } catch (err) {
-            console.log(err);
-
-            res.status(500).json({
-                message: "Server error"
-            });
-        }
-    });
-
-    // ✏️ UPDATE TASK
-    app.put("/api/tasks/:id", auth, async (req, res) => {
-
-        try {
-
-            const { name, status, deadline } = req.body;
-
-            const { data, error } = await supabase
-                .from("tasks")
-                .update({
+        const { error } = await supabase
+            .from("users")
+            .insert([
+                {
                     name,
-                    status,
-                    deadline
-                })
-                .eq("id", req.params.id)
-                .select();
+                    email,
+                    password: hashedPassword
+                }
+            ]);
 
-            if (error) {
-                return res.status(500).json({
-                    message: "Error updating task"
-                });
-            }
-
-            res.json(data);
-
-        } catch (err) {
-            console.log(err);
-
-            res.status(500).json({
-                message: "Server error"
+        if (error) {
+            console.log("Signup error:", error);
+            return res.status(500).json({
+                message: "Signup failed"
             });
         }
-    });
 
-    // ❌ DELETE TASK
-    app.delete("/api/tasks/:id", auth, async (req, res) => {
+        res.json({
+            message: "User registered successfully"
+        });
 
-        try {
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Signup error"
+        });
+    }
+});
 
-            const { error } = await supabase
-                .from("tasks")
-                .delete()
-                .eq("id", req.params.id);
+// LOGIN
+app.post("/api/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
 
-            if (error) {
-                return res.status(500).json({
-                    message: "Error deleting task"
-                });
-            }
-
-            res.json({
-                message: "Task deleted"
-            });
-
-        } catch (err) {
-            console.log(err);
-
-            res.status(500).json({
-                message: "Server error"
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required"
             });
         }
-    });
 
-    /* ================= START SERVER ================= */
+        const { data: user, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("email", email)
+            .maybeSingle();
 
-    const PORT = process.env.PORT || 5001;
+        if (error || !user) {
+            return res.status(401).json({
+                message: "User not found"
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(401).json({
+                message: "Wrong password"
+            });
+        }
+
+        const token = jwt.sign(
+            { id: user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
+
+        res.json({ token });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Login error"
+        });
+    }
+});
+
+/* ================= TASK ROUTES ================= */
+
+// ADD TASK
+app.post("/api/tasks", auth, async (req, res) => {
+    try {
+        const { name, status, deadline } = req.body;
+
+        if (!name) {
+            return res.status(400).json({
+                message: "Task name is required"
+            });
+        }
+
+        const { data, error } = await supabase
+            .from("tasks")
+            .insert([
+                {
+                    name,
+                    status: status || "pending",
+                    deadline: deadline || null,
+                    user_id: req.userId
+                }
+            ])
+            .select();
+
+        if (error) {
+            console.log("Add task error:", error);
+            return res.status(500).json({
+                message: "Error adding task"
+            });
+        }
+
+        res.json(data[0]);
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
+
+// GET TASKS
+app.get("/api/tasks", auth, async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from("tasks")
+            .select("*")
+            .eq("user_id", req.userId)
+            .order("id", { ascending: false });
+
+        if (error) {
+            console.log("Get tasks error:", error);
+            return res.status(500).json({
+                message: "Error fetching tasks"
+            });
+        }
+
+        res.json(data);
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
+
+// UPDATE TASK
+app.put("/api/tasks/:id", auth, async (req, res) => {
+    try {
+        const { name, status, deadline } = req.body;
+
+        const updateData = {};
+
+        if (name !== undefined) updateData.name = name;
+        if (status !== undefined) updateData.status = status;
+        if (deadline !== undefined) updateData.deadline = deadline || null;
+
+        const { data, error } = await supabase
+            .from("tasks")
+            .update(updateData)
+            .eq("id", req.params.id)
+            .eq("user_id", req.userId)
+            .select();
+
+        if (error) {
+            console.log("Update task error:", error);
+            return res.status(500).json({
+                message: "Error updating task"
+            });
+        }
+
+        if (!data.length) {
+            return res.status(404).json({
+                message: "Task not found"
+            });
+        }
+
+        res.json(data[0]);
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
+
+// DELETE TASK
+app.delete("/api/tasks/:id", auth, async (req, res) => {
+    try {
+        const { error } = await supabase
+            .from("tasks")
+            .delete()
+            .eq("id", req.params.id)
+            .eq("user_id", req.userId);
+
+        if (error) {
+            console.log("Delete task error:", error);
+            return res.status(500).json({
+                message: "Error deleting task"
+            });
+        }
+
+        res.json({
+            message: "Task deleted"
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Server error"
+        });
+    }
+});
+
+/* ================= SMART API RECOMMENDATION ================= */
+
+app.get("/api/recommendations", auth, async (req, res) => {
+    try {
+        const { data: tasks, error } = await supabase
+            .from("tasks")
+            .select("*")
+            .eq("user_id", req.userId)
+            .eq("status", "completed");
+
+        if (error) {
+            console.log("Recommendation error:", error);
+            return res.status(500).json({
+                message: "Error fetching recommendations"
+            });
+        }
+
+        const categories = {
+            coding: 0,
+            study: 0,
+            fitness: 0,
+            reading: 0,
+            project: 0
+        };
+
+        tasks.forEach(task => {
+            const name = task.name.toLowerCase();
+
+            if (
+                name.includes("code") ||
+                name.includes("coding") ||
+                name.includes("javascript") ||
+                name.includes("python") ||
+                name.includes("html") ||
+                name.includes("css")
+            ) {
+                categories.coding++;
+            }
+
+            if (
+                name.includes("study") ||
+                name.includes("exam") ||
+                name.includes("learn") ||
+                name.includes("revision")
+            ) {
+                categories.study++;
+            }
+
+            if (
+                name.includes("gym") ||
+                name.includes("workout") ||
+                name.includes("exercise") ||
+                name.includes("fitness")
+            ) {
+                categories.fitness++;
+            }
+
+            if (
+                name.includes("read") ||
+                name.includes("book") ||
+                name.includes("article")
+            ) {
+                categories.reading++;
+            }
+
+            if (
+                name.includes("project") ||
+                name.includes("assignment") ||
+                name.includes("build")
+            ) {
+                categories.project++;
+            }
+        });
+
+        const topCategory = Object.keys(categories).reduce((a, b) =>
+            categories[a] > categories[b] ? a : b
+        );
+
+        const suggestions = {
+            coding: "💻 Practice coding for 2 hours",
+            study: "📘 Study important topics for 2 hours",
+            fitness: "💪 Workout for 1 hour",
+            reading: "📖 Read 20 pages",
+            project: "🛠 Work on your project for 3 hours"
+        };
+
+        let suggestion = "Complete more tasks to get smart recommendations.";
+
+        if (categories[topCategory] > 0) {
+            suggestion = suggestions[topCategory];
+        }
+
+        res.json({
+            topCategory,
+            categories,
+            suggestion
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            message: "Recommendation server error"
+        });
+    }
+});
+
+/* ================= HEALTH CHECK ================= */
+
+app.get("/", (req, res) => {
+    res.send("Task Manager API is running");
+});
+
+/* ================= START SERVER ================= */
+
+const PORT = process.env.PORT || 5002;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
