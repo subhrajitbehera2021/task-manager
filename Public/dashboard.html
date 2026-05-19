@@ -165,13 +165,21 @@ taskInput.addEventListener("input", () => {
     }
 
     // ✅ Project / Work
-    else if (
-        text.includes("project") ||
-        text.includes("code") ||
-        text.includes("assignment") ||
-        text.includes("work")
+    // ✅ Project / Coding / Work
+else if (
+    text.includes("project") ||
+    text.includes("code") ||
+    text.includes("coding") ||
+    text.includes("developer") ||
+    text.includes("programming") ||
+    text.includes("javascript") ||
+    text.includes("python") ||
+    text.includes("react") ||
+    text.includes("node") ||
+    text.includes("assignment") ||
+    text.includes("work")
     ) {
-        suggestion = "🛠 Work on project for 3 hours";
+    suggestion = "🛠 Work on project for 3 hours";
     }
 
     // ✅ Reading

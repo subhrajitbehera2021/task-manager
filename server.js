@@ -315,8 +315,12 @@ app.get("/api/recommendations", auth, async (req, res) => {
             if (
                 name.includes("code") ||
                 name.includes("coding") ||
+                name.includes("programming") ||
+                name.includes("developer") ||
                 name.includes("javascript") ||
                 name.includes("python") ||
+                name.includes("react") ||
+                name.includes("node") ||
                 name.includes("html") ||
                 name.includes("css")
             ) {
@@ -363,55 +367,54 @@ app.get("/api/recommendations", auth, async (req, res) => {
         );
 
         const suggestions = {
-    coding: [
-        "💻 Practice coding for 2 hours",
-        "🧠 Solve 3 DSA problems",
-        "⚡ Build a mini JavaScript project"
-    ],
+            coding: [
+                "💻 Practice coding for 2 hours",
+                "🧠 Solve 3 DSA problems",
+                "⚡ Build a mini JavaScript project"
+            ],
 
-    study: [
-        "📘 Study important topics for 2 hours",
-        "📝 Revise notes for upcoming exam",
-        "🎯 Complete one learning module"
-    ],
+            study: [
+                "📘 Study important topics for 2 hours",
+                "📝 Revise notes for upcoming exam",
+                "🎯 Complete one learning module"
+            ],
 
-    fitness: [
-        "💪 Workout for 1 hour",
-        "🏃 Run for 30 minutes",
-        "🔥 Complete a cardio session"
-    ],
+            fitness: [
+                "💪 Workout for 1 hour",
+                "🏃 Run for 30 minutes",
+                "🔥 Complete a cardio session"
+            ],
 
-    reading: [
-        "📖 Read 20 pages",
-        "📚 Finish one chapter",
-        "🧠 Read a technical article"
-    ],
+            reading: [
+                "📖 Read 20 pages",
+                "📚 Finish one chapter",
+                "🧠 Read a technical article"
+            ],
 
-    project: [
-        "🛠 Work on your project for 3 hours",
-        "🚀 Improve UI of your application",
-        "⚙ Fix backend API issues"
-    ]
-};
+            project: [
+                "🛠 Work on your project for 3 hours",
+                "🚀 Improve UI of your application",
+                "⚙ Fix backend API issues"
+            ]
+        };
 
         let suggestion = "Complete more tasks to get smart recommendations.";
 
         if (categories[topCategory] > 0) {
             const randomIndex = Math.floor(
-            Math.random() * suggestions[topCategory].length
-        );
+                Math.random() * suggestions[topCategory].length
+            );
 
-    suggestion =
-    suggestions[topCategory][randomIndex];
+            suggestion = suggestions[topCategory][randomIndex];
         }
 
         res.json({
-    model: "Rule-Based Recommendation Engine",
-    topCategory,
-    categories,
-    suggestion,
-    analyzedTasks: tasks.length
-    });
+            model: "Rule-Based Recommendation Engine",
+            topCategory,
+            categories,
+            suggestion,
+            analyzedTasks: tasks.length
+        });
 
     } catch (err) {
         console.log(err);
