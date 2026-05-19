@@ -419,6 +419,30 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     font-size: 15px;
 }
+
+.suggestion-box {
+    display: none;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    margin-top: 6px;
+    padding: 6px;
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+.suggestion-item {
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.suggestion-item:hover {
+    background: #f1f5f9;
+}
 /* ===== RESPONSIVE ===== */
 @media(max-width: 768px) {
     .dashboard {

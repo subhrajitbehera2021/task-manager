@@ -81,7 +81,6 @@ if (!localStorage.getItem("token")) {
     </div>
 </section>
 
-
 <!-- ===== TASK LIST ===== -->
 <section>
     <h2>Your Tasks</h2>
@@ -115,19 +114,25 @@ if (!localStorage.getItem("token")) {
 <!-- ===== JAVASCRIPT ===== -->
 <script>
 const API = "https://task-manager-0ks0.onrender.com/api/tasks";
+const RECOMMEND_API = "https://task-manager-0ks0.onrender.com/api/recommendations";
+
 const token = localStorage.getItem("token");
 
 let currentFilter = "all";
 let searchQuery = "";
 let editTaskId = null;
 
+// =======================
 // 🔍 SEARCH
+// =======================
 document.getElementById("searchInput").addEventListener("input", (e) => {
     searchQuery = e.target.value.toLowerCase();
     loadTasks();
 });
 
+// =======================
 // 🎯 FILTER
+// =======================
 function filterTasks(type, el) {
     currentFilter = type;
 
@@ -140,73 +145,110 @@ function filterTasks(type, el) {
 }
 
 // =======================
-// 🤖 AI SUGGESTION
+// 🤖 AI MULTIPLE SUGGESTIONS
 // =======================
 const taskInput = document.getElementById("taskName");
 const suggestionBox = document.getElementById("suggestionBox");
 
 taskInput.addEventListener("input", () => {
     const text = taskInput.value.toLowerCase();
-    let suggestion = "";
 
-    // ✅ Study
-    if (text.includes("study") || text.includes("exam") || text.includes("learn")) {
-        suggestion = "📘 Study for 2 hours";
-    } 
+    let suggestions = [];
 
-    // ✅ Gym / Fitness
+    // Study suggestions
+    if (
+        text.includes("study") ||
+        text.includes("exam") ||
+        text.includes("learn") ||
+        text.includes("revision")
+    ) {
+        suggestions = [
+            "📘 Study for 2 hours",
+            "📝 Revise important notes",
+            "🎯 Complete one learning module"
+        ];
+    }
+
+    // Fitness suggestions
     else if (
         text.includes("gym") ||
         text.includes("workout") ||
         text.includes("exercise") ||
         text.includes("fitness")
     ) {
-        suggestion = "💪 Workout for 1 hour";
+        suggestions = [
+            "💪 Workout for 1 hour",
+            "🏃 Run for 30 minutes",
+            "🔥 Complete cardio session"
+        ];
     }
 
-    // ✅ Project / Work
-    // ✅ Project / Coding / Work
-else if (
-    text.includes("project") ||
-    text.includes("code") ||
-    text.includes("coding") ||
-    text.includes("developer") ||
-    text.includes("programming") ||
-    text.includes("javascript") ||
-    text.includes("python") ||
-    text.includes("react") ||
-    text.includes("node") ||
-    text.includes("assignment") ||
-    text.includes("work")
+    // Coding / Project suggestions
+    else if (
+        text.includes("project") ||
+        text.includes("code") ||
+        text.includes("coding") ||
+        text.includes("developer") ||
+        text.includes("programming") ||
+        text.includes("javascript") ||
+        text.includes("python") ||
+        text.includes("react") ||
+        text.includes("node") ||
+        text.includes("html") ||
+        text.includes("css") ||
+        text.includes("assignment") ||
+        text.includes("work")
     ) {
-    suggestion = "🛠 Work on project for 3 hours";
+        suggestions = [
+            "💻 Practice coding for 2 hours",
+            "🧠 Solve 3 DSA problems",
+            "⚡ Build a mini JavaScript project",
+            "🛠 Work on project for 3 hours",
+            "🚀 Improve UI of your application"
+        ];
     }
 
-    // ✅ Reading
+    // Reading suggestions
     else if (
         text.includes("read") ||
         text.includes("book") ||
-        text.includes("study material")
+        text.includes("article")
     ) {
-        suggestion = "📖 Read 20 pages";
+        suggestions = [
+            "📖 Read 20 pages",
+            "📚 Finish one chapter",
+            "🧠 Read a technical article"
+        ];
     }
 
-    // Show / Hide
-    if (suggestion) {
-        suggestionBox.innerText = suggestion;
-        suggestionBox.style.display = "block";
-    } else {
+    showSuggestions(suggestions);
+});
+
+function showSuggestions(suggestions) {
+    suggestionBox.innerHTML = "";
+
+    if (suggestions.length === 0) {
         suggestionBox.style.display = "none";
+        return;
     }
-});
 
-// ✅ CLICK SUGGESTION (FIXED)
-suggestionBox.addEventListener("click", () => {
-    taskInput.value = suggestionBox.innerText.replace(/^[^\w]+/, "");
-    suggestionBox.style.display = "none";
-});
+    suggestions.forEach(item => {
+        const div = document.createElement("div");
+        div.classList.add("suggestion-item");
+        div.innerText = item;
 
-// hide on outside click
+        div.addEventListener("click", () => {
+            taskInput.value = item.replace(/^[^\w]+/, "").trim();
+            suggestionBox.style.display = "none";
+        });
+
+        suggestionBox.appendChild(div);
+    });
+
+    suggestionBox.style.display = "block";
+}
+
+// Hide suggestions when clicking outside
 document.addEventListener("click", (e) => {
     if (!suggestionBox.contains(e.target) && e.target !== taskInput) {
         suggestionBox.style.display = "none";
@@ -234,6 +276,7 @@ document.getElementById("taskForm").addEventListener("submit", async (e) => {
 
     e.target.reset();
     suggestionBox.style.display = "none";
+
     loadTasks();
     loadRecommendation();
 });
@@ -248,6 +291,7 @@ async function loadTasks() {
         });
 
         const tasks = await res.json();
+
         const list = document.getElementById("taskList");
         list.innerHTML = "";
 
@@ -272,44 +316,51 @@ async function loadTasks() {
 
             if (isOverdue) div.classList.add("overdue");
 
-                 div.innerHTML = `
-    <div class="task-header">
-        <h4>${task.name}</h4>
-        <span class="status ${task.status}">${task.status}</span>
-    </div>
+            div.innerHTML = `
+                <div class="task-header">
+                    <h4>${task.name}</h4>
+                    <span class="status ${task.status}">
+                        ${task.status}
+                    </span>
+                </div>
 
-    <p>📅 Due: ${
-        task.deadline
-        ? new Date(task.deadline).toLocaleDateString()
-        : "No date"
-    }</p>
+                <p>
+                    📅 Due:
+                    ${
+                        task.deadline
+                        ? new Date(task.deadline).toLocaleDateString()
+                        : "No date"
+                    }
+                </p>
 
-    <div class="task-actions">
-    <button class="complete-btn"
-        onclick="toggleStatus('${task.id}', '${task.status}')">
-        ${task.status === "completed" ? "Undo" : "Complete"}
-    </button>
+                <div class="task-actions">
+                    <button class="complete-btn"
+                        onclick="toggleStatus('${task.id}', '${task.status}')">
+                        ${task.status === "completed" ? "Undo" : "Complete"}
+                    </button>
 
-    <button class="edit-btn"
-        onclick="openEditModal(
-            '${task.id}',
-            '${task.name}',
-            '${task.status}',
-            '${task.deadline || ""}'
-        )">
-        Edit
-    </button>
+                    <button class="edit-btn"
+                        onclick="openEditModal(
+                            '${task.id}',
+                            '${task.name.replace(/'/g, "\\'")}',
+                            '${task.status}',
+                            '${task.deadline || ""}'
+                        )">
+                        Edit
+                    </button>
 
-    <button class="delete-btn"
-        onclick="deleteTask('${task.id}')">
-        Delete
-    </button>
-</div>
-`;
+                    <button class="delete-btn"
+                        onclick="deleteTask('${task.id}')">
+                        Delete
+                    </button>
+                </div>
+            `;
+
             list.appendChild(div);
         });
 
     } catch (err) {
+        console.error(err);
         alert("Error loading tasks");
     }
 }
@@ -366,6 +417,7 @@ async function updateTask() {
     });
 
     closeModal();
+
     loadTasks();
     loadRecommendation();
 }
@@ -386,14 +438,8 @@ async function deleteTask(id) {
 // =======================
 // 🤖 SMART RECOMMENDATION
 // =======================
-
-const RECOMMEND_API =
-    "https://task-manager-0ks0.onrender.com/api/recommendations";
-
 async function loadRecommendation() {
-
     try {
-
         const res = await fetch(RECOMMEND_API, {
             headers: {
                 "Authorization": token
@@ -403,37 +449,37 @@ async function loadRecommendation() {
         const data = await res.json();
 
         document.getElementById("recommendationBox").innerHTML = `
-    <p>
-        <strong>Suggested:</strong>
-        ${data.suggestion}
-    </p>
+            <p>
+                <strong>Suggested:</strong>
+                ${data.suggestion}
+            </p>
 
-    <p>
-        <small>
-            Top Category:
-            ${data.topCategory}
-        </small>
-    </p>
+            <p>
+                <small>
+                    Top Category:
+                    ${data.topCategory}
+                </small>
+            </p>
 
-    <p>
-        <small>
-            Tasks Analyzed:
-            ${data.analyzedTasks}
-        </small>
-    </p>
+            <p>
+                <small>
+                    Tasks Analyzed:
+                    ${data.analyzedTasks}
+                </small>
+            </p>
 
-    <p>
-        <small>
-            AI Model:
-            ${data.model}
-        </small>
-    </p>
-    `;
+            <p>
+                <small>
+                    AI Model:
+                    ${data.model}
+                </small>
+            </p>
+        `;
 
     } catch (err) {
+        console.error(err);
 
-        document.getElementById("recommendationBox")
-            .innerText =
+        document.getElementById("recommendationBox").innerText =
             "Could not load recommendation.";
     }
 }
@@ -446,13 +492,17 @@ document.getElementById("logoutBtn").addEventListener("click", () => {
     window.location.href = "login.html";
 });
 
-// close modal on outside click
+// Close modal when clicking outside
 window.onclick = function(e) {
     const modal = document.getElementById("editModal");
-    if (e.target === modal) closeModal();
+    if (e.target === modal) {
+        closeModal();
+    }
 };
 
+// =======================
 // 🚀 INIT
+// =======================
 loadTasks();
 loadRecommendation();
 </script>
