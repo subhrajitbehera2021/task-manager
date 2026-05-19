@@ -363,24 +363,55 @@ app.get("/api/recommendations", auth, async (req, res) => {
         );
 
         const suggestions = {
-            coding: "💻 Practice coding for 2 hours",
-            study: "📘 Study important topics for 2 hours",
-            fitness: "💪 Workout for 1 hour",
-            reading: "📖 Read 20 pages",
-            project: "🛠 Work on your project for 3 hours"
-        };
+    coding: [
+        "💻 Practice coding for 2 hours",
+        "🧠 Solve 3 DSA problems",
+        "⚡ Build a mini JavaScript project"
+    ],
+
+    study: [
+        "📘 Study important topics for 2 hours",
+        "📝 Revise notes for upcoming exam",
+        "🎯 Complete one learning module"
+    ],
+
+    fitness: [
+        "💪 Workout for 1 hour",
+        "🏃 Run for 30 minutes",
+        "🔥 Complete a cardio session"
+    ],
+
+    reading: [
+        "📖 Read 20 pages",
+        "📚 Finish one chapter",
+        "🧠 Read a technical article"
+    ],
+
+    project: [
+        "🛠 Work on your project for 3 hours",
+        "🚀 Improve UI of your application",
+        "⚙ Fix backend API issues"
+    ]
+};
 
         let suggestion = "Complete more tasks to get smart recommendations.";
 
         if (categories[topCategory] > 0) {
-            suggestion = suggestions[topCategory];
+            const randomIndex = Math.floor(
+            Math.random() * suggestions[topCategory].length
+        );
+
+    suggestion =
+    suggestions[topCategory][randomIndex];
         }
 
         res.json({
-            topCategory,
-            categories,
-            suggestion
-        });
+    model: "Rule-Based Recommendation Engine",
+    topCategory,
+    categories,
+    suggestion,
+    analyzedTasks: tasks.length
+    });
 
     } catch (err) {
         console.log(err);

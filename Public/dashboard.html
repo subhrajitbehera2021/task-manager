@@ -395,18 +395,32 @@ async function loadRecommendation() {
         const data = await res.json();
 
         document.getElementById("recommendationBox").innerHTML = `
-            <p>
-                <strong>Suggested:</strong>
-                ${data.suggestion}
-            </p>
+    <p>
+        <strong>Suggested:</strong>
+        ${data.suggestion}
+    </p>
 
-            <p>
-                <small>
-                    Top Category:
-                    ${data.topCategory}
-                </small>
-            </p>
-        `;
+    <p>
+        <small>
+            Top Category:
+            ${data.topCategory}
+        </small>
+    </p>
+
+    <p>
+        <small>
+            Tasks Analyzed:
+            ${data.analyzedTasks}
+        </small>
+    </p>
+
+    <p>
+        <small>
+            AI Model:
+            ${data.model}
+        </small>
+    </p>
+    `;
 
     } catch (err) {
 
